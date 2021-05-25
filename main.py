@@ -13,12 +13,12 @@ targets = pygame.sprite.Group()
 class Snake():
     def __init__(self):
         # Координаты точек хвоста начиная с головы
-        self.tail = []
+        self.tail = [(-1, 0), (-2, 0)]
         self.head = (0, 0)
         # ориентация
         self.orientation = 'x'
 
-        self.size = 1
+        self.size = 3
         
         # скорости
         self.dx = 1
@@ -39,7 +39,31 @@ class Snake():
             self.head = (WIDTH + self.size_of_snake, y)
         elif y + self.size_of_snake <= 0 and self.dy < 0:
             self.head = (x, HEIGHT + self.size_of_snake)
+        buffer = [(x, y)]
+        
+        for sprite in targets:
+            if sprite.rect.x + sprite.rect.w >= x and\
+                sprite.rect.y + sprite.rect.h >= y and\
+                x + self.size_of_snake >= sprite.rect.x and\
+                y + self.size_of_snake >= sprite.rect.y:
+                self.size += 1
+                sprite.kill()
+                print('Съел', sprite.rect.x, sprite.rect.y)
+        ltx, lty = self.head
+        for i, v in enumerate(self.tail):
+            _ltx, _lty = self.tail[i]
+            
+            self.tail[i] = ltx, lty
+            ltx = _ltx
+            lty = _lty
         self.head = (x + self.dx, y + self.dy)
+        self.tail = buffer
+
+    def draw(self, screen):
+        x, y = self.head
+        pygame.draw.rect(screen, (255, 0, 0), (x * self.size_of_snake, y * self.size_of_snake, self.size_of_snake, self.size_of_snake))
+        for x, y in self.tail:
+            pygame.draw.rect(screen, (255, 0, 0), (x * self.size_of_snake, y * self.size_of_snake, self.size_of_snake, self.size_of_snake))
 
 
 class Target(pygame.sprite.Sprite):
@@ -68,11 +92,10 @@ board = Board(40)
 snake = Snake()
 # all_sprites.add(snake)
 clock = pygame.time.Clock()
-FPS = 120
-# for i in range(50):
-#     target = Target()
-#     all_sprites.add(target)
-#     targets.add(target)
+FPS = 5
+target = Target()
+all_sprites.add(target)
+targets.add(target)
 while running:
     for ev in pygame.event.get():
         if ev.type == pygame.QUIT:
@@ -96,9 +119,9 @@ while running:
                 snake.orientation = 'y'
     screen.fill((0, 0, 0))
     board.draw_board(screen)
-    pygame.draw.rect(screen, (255, 0, 0), (*snake.head, snake.size_of_snake, snake.size_of_snake), 0)
-    # all_sprites.update()
-    # all_sprites.draw(screen)
+    snake.draw(screen)
+    all_sprites.update()
+    all_sprites.draw(screen)
     snake.update()
     pygame.display.flip()
     clock.tick(FPS)
